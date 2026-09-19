@@ -38,11 +38,24 @@ module ComCcsdsConfig {
 
     # Buffer management constants
     module BuffMgr {
-        constant frameAccumulatorSize  = 2048     
-        constant commsBuffSize         = 140      
-        constant commsFileBuffSize     = 140      
-        constant commsBuffCount        = 3        
-        constant commsFileBuffCount    = 3       
-        constant commsBuffMgrId        = 200      
+        constant frameAccumulatorSize  = 2048
+        # Was 140 here originally - far smaller than
+        # Svc/Subtopologies/ComCcsds/ComCcsdsConfig/ComCcsdsConfig.fpp's own
+        # framework default of 2048. SpacePacketFramer::dataIn_handler
+        # allocates exactly (SpacePacketHeader::SERIALIZED_SIZE +
+        # data.getSize()) bytes from this bin per outgoing frame; at 140
+        # bytes, any frame larger than that (even a small burst of
+        # boot-time diagnostic events) overruns the buffer and hits
+        # FW_ASSERT(status == Fw::FW_SERIALIZE_OK, status) with
+        # status=FW_SERIALIZE_NO_ROOM_LEFT - confirmed on real hardware
+        # (Teensy 4.1): the deployment crashed and rebooted in a loop
+        # immediately after boot, which looked like a comm-channel/framing
+        # problem from the ground station side but was actually a crash
+        # loop on the flight side. Restored to match F' core's own default.
+        constant commsBuffSize         = 2048
+        constant commsFileBuffSize     = 140
+        constant commsBuffCount        = 3
+        constant commsFileBuffCount    = 3
+        constant commsBuffMgrId        = 200
     }
 }
